@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"sync"
+	"time"
 )
 
 type backend struct {
@@ -43,6 +45,25 @@ func (sp *serverPool) NextBackend() *backend {
 	}
 
 	return nil
+}
+
+func (b *backend) SetAlive(alive bool) {
+	b.mux.Lock()
+	b.IsAlive = alive
+	b.mux.Unlock()
+}
+
+func (b *backend) healthCheck() {
+	client := http.Client{
+		Timeout: 2 * time.Second,
+	}
+	resp, err := client.Get(b.Url.String())
+	if err != nil {
+		b.SetAlive(false)
+		return
+	}
+	defer resp.Body.Close()
+	b.SetAlive(true)
 }
 
 func main() {
