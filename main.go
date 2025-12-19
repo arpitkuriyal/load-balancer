@@ -69,3 +69,12 @@ func (b *backend) healthCheck() {
 func main() {
 	fmt.Println("hello")
 }
+
+func startHealthCheck(pool *serverPool, interval time.Duration) {
+	for {
+		for _, b := range pool.backends {
+			go b.healthCheck()
+		}
+		time.Sleep(interval)
+	}
+}
