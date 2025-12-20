@@ -24,7 +24,7 @@ type serverPool struct {
 	mux          sync.Mutex
 }
 
-func (sp *serverPool) NextBackend() *backend {
+func (sp *serverPool) NextBackendRoundRobin() *backend {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 	n := len(sp.backends)
@@ -45,6 +45,33 @@ func (sp *serverPool) NextBackend() *backend {
 		}
 	}
 
+	return nil
+}
+
+func (sp *serverPool) NextBackendLeastConnection() *backend {
+	sp.mux.Lock()
+	defer sp.mux.Unlock()
+
+	minConn := -1
+	var leastConnectedBackend *backend
+
+	for _, b := range sp.backends {
+		b.mux.Lock()
+		alive := b.IsAlive
+		conns := b.activeConnections
+		b.mux.Unlock()
+		if !alive {
+			continue
+		}
+		if minConn == -1 || conns < minConn {
+			minConn = conns
+			leastConnectedBackend = b
+		}
+	}
+
+	if leastConnectedBackend != nil {
+		return leastConnectedBackend
+	}
 	return nil
 }
 
@@ -110,7 +137,7 @@ func main() {
 	go startHealthCheck(pool, 5*time.Second)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		backend := pool.NextBackend()
+		backend := pool.NextBackendRoundRobin()
 		if backend == nil {
 			http.Error(w, "no backend available", http.StatusServiceUnavailable)
 			return
