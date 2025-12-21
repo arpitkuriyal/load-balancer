@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Port     int      `yaml:"lb_port"`
+	Port     string   `yaml:"lb_port"`
 	Backends []string `yaml:"backends"`
 	Strategy string   `yaml:"strategy"`
 }
@@ -27,7 +27,7 @@ func GetLbConfig(path string) (*Config, error) {
 		return nil, errors.New("backend hosts expected, none provided")
 	}
 
-	if cfg.Port == 0 {
+	if cfg.Port == "" {
 		return nil, errors.New("load balancer port not found")
 	}
 

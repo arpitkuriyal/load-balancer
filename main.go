@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
 
+	"load-balancer/config"
 	"load-balancer/internal/backend"
 	"load-balancer/internal/healthcheck"
 	"load-balancer/internal/pool"
@@ -13,17 +15,28 @@ import (
 )
 
 func main() {
+	cfg, err := config.GetLbConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 	sp := &pool.ServerPool{}
+	for _, rawURL := range cfg.Backends {
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			log.Fatalf("invalid backendUrl %s: %v", rawURL, err)
+		}
+		sp.Backends = append(sp.Backends, backend.NewBackend(parsedURL))
+	}
 
-	u1, _ := url.Parse("http://localhost:9001")
-	u2, _ := url.Parse("http://localhost:9002")
-
-	b1 := backend.NewBackend(u1)
-	b2 := backend.NewBackend(u2)
-
-	sp.Backends = append(sp.Backends, b1, b2)
-
-	lbStrategy := strategy.NewRoundRobin(sp)
+	var lbStrategy strategy.Strategy
+	switch cfg.Strategy {
+	case "round-robin":
+		lbStrategy = strategy.NewRoundRobin(sp)
+	case "least-connection":
+		lbStrategy = strategy.NewLeastConnection(sp)
+	default:
+		log.Fatalf("unsupported strategy: %s till now it only support 'round-robin' and 'least-coonection'", cfg.Strategy)
+	}
 
 	go healthcheck.Start(sp, 5*time.Second)
 
@@ -36,6 +49,6 @@ func main() {
 		b.Serve(w, r)
 	})
 
-	fmt.Println("Load balancer listening on :8080")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Load balancer listening on", cfg.Port)
+	http.ListenAndServe(cfg.Port, nil)
 }
