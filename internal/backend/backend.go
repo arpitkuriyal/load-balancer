@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -45,16 +46,29 @@ func NewBackend(u *url.URL) *Backend {
 	}
 }
 
-func (b *Backend) HealthCheck() {
-	client := http.Client{
-		Timeout: 2 * time.Second,
+func (b *Backend) HealthCheck(ctx context.Context) {
+	checkCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(
+		checkCtx,
+		http.MethodGet,
+		b.Url.String(),
+		nil,
+	)
+
+	if err != nil {
+		b.SetAlive(false)
+		return
 	}
-	resp, err := client.Get(b.Url.String())
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		b.SetAlive(false)
 		return
 	}
 	defer resp.Body.Close()
+
 	b.SetAlive(true)
 }
 

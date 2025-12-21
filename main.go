@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +16,8 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	cfg, err := config.GetLbConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
@@ -38,7 +41,7 @@ func main() {
 		log.Fatalf("unsupported strategy: %s till now it only support 'round-robin' and 'least-coonection'", cfg.Strategy)
 	}
 
-	go healthcheck.Start(sp, 5*time.Second)
+	go healthcheck.Start(ctx, sp, 5*time.Second)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		b := lbStrategy.Next()
