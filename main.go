@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -36,6 +36,6 @@ func main() {
 		b.Serve(w, r)
 	})
 
-	log.Println("Load balancer listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("Load balancer listening on :8080")
+	http.ListenAndServe(":8080", nil)
 }
