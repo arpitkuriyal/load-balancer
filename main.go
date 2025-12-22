@@ -24,7 +24,7 @@ func main() {
 
 	utils.Log.Info("starting load balancer")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	cfg, err := config.GetLbConfig("config.yaml")
 	if err != nil {

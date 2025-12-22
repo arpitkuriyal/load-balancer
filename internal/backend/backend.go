@@ -22,8 +22,25 @@ type Backend struct {
 
 func (b *Backend) SetAlive(alive bool) {
 	b.mux.Lock()
+	defer b.mux.Unlock()
+
+	if b.IsAlive == alive {
+		return
+	}
+
 	b.IsAlive = alive
-	b.mux.Unlock()
+
+	if alive {
+		utils.Log.Info(
+			"backend recovered",
+			zap.String("backend", b.Url.String()),
+		)
+	} else {
+		utils.Log.Warn(
+			"backend marked down",
+			zap.String("backend", b.Url.String()),
+		)
+	}
 }
 
 func (b *Backend) Serve(w http.ResponseWriter, r *http.Request) {
