@@ -14,6 +14,12 @@ func InitLogger(env string) {
 	}
 
 	if err != nil {
-		panic(err)
+		panic("falide to initialize logger" + err.Error())
+	}
+}
+
+func Sync() {
+	if Log != nil {
+		_ = Log.Sync()
 	}
 }
