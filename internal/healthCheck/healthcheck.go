@@ -20,6 +20,7 @@ func Start(ctx context.Context, pool *pool.ServerPool, interval time.Duration) {
 	for {
 		select {
 		case <-ctx.Done():
+			utils.Log.Info("health check scheduler stopped")
 			return
 		case <-ticker.C:
 			for _, b := range pool.Backends {
