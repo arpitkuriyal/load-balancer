@@ -2,11 +2,14 @@ package backend
 
 import (
 	"context"
+	utils "load-balancer/internal/logger"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type Backend struct {
@@ -58,12 +61,22 @@ func (b *Backend) HealthCheck(ctx context.Context) {
 	)
 
 	if err != nil {
+		utils.Log.Debug(
+			"health check request creation failed",
+			zap.String("backend", b.Url.String()),
+			zap.Error(err),
+		)
 		b.SetAlive(false)
 		return
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		utils.Log.Warn(
+			"health check failed",
+			zap.String("backend", b.Url.String()),
+			zap.Error(err),
+		)
 		b.SetAlive(false)
 		return
 	}

@@ -22,7 +22,7 @@ func (rr *RoundRobin) Next() *backend.Backend {
 		return nil
 	}
 
-	for i := 0; i < n; i++ {
+	for range n {
 		rr.pool.CurrentIndex = (rr.pool.CurrentIndex + 1) % n
 		b := rr.pool.Backends[rr.pool.CurrentIndex]
 
