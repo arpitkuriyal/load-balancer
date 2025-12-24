@@ -12,7 +12,7 @@ import (
 	"load-balancer/config"
 	"load-balancer/internal/backend"
 	"load-balancer/internal/healthcheck"
-	utils "load-balancer/internal/logger"
+	"load-balancer/internal/logger"
 	"load-balancer/internal/pool"
 	"load-balancer/internal/strategy"
 
@@ -20,19 +20,19 @@ import (
 )
 
 func main() {
-	utils.InitLogger(os.Getenv("LOG_ENV"))
-	defer utils.Sync()
+	logger.InitLogger(os.Getenv("LOG_ENV"))
+	defer logger.Sync()
 
-	utils.Log.Info("starting load balancer")
+	logger.Log.Info("starting load balancer")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	cfg, err := config.GetLbConfig("config.yaml")
 	if err != nil {
-		utils.Log.Fatal("failed to load config", zap.Error(err))
+		logger.Log.Fatal("failed to load config", zap.Error(err))
 	}
 
-	utils.Log.Info(
+	logger.Log.Info(
 		"config loaded",
 		zap.Strings("backends", cfg.Backends),
 		zap.String("strategy", cfg.Strategy),
@@ -43,7 +43,7 @@ func main() {
 	for _, rawURL := range cfg.Backends {
 		parsedURL, err := url.Parse(rawURL)
 		if err != nil {
-			utils.Log.Fatal(
+			logger.Log.Fatal(
 				"invalid backend Urls",
 				zap.String("url", rawURL),
 				zap.Error(err),
@@ -52,7 +52,7 @@ func main() {
 
 		sp.Backends = append(sp.Backends, backend.NewBackend(parsedURL))
 
-		utils.Log.Info(
+		logger.Log.Info(
 			"backend registered",
 			zap.String("backend", parsedURL.String()),
 		)
@@ -65,11 +65,11 @@ func main() {
 	case "least-connection":
 		lbStrategy = strategy.NewLeastConnection(sp)
 	default:
-		utils.Log.Fatal("unsupported strategy", zap.String("strategy", cfg.Strategy))
+		logger.Log.Fatal("unsupported strategy", zap.String("strategy", cfg.Strategy))
 
 	}
 
-	utils.Log.Info("load balancing strategy initialized", zap.String("strategy", cfg.Strategy))
+	logger.Log.Info("load balancing strategy initialized", zap.String("strategy", cfg.Strategy))
 
 	go healthcheck.Start(ctx, sp, 5*time.Second)
 
@@ -80,7 +80,7 @@ func main() {
 			return
 		}
 
-		utils.Log.Debug(
+		logger.Log.Debug(
 			"request forwarded",
 			zap.String("backend", b.Url.String()),
 			zap.String("path", r.URL.Path),
@@ -97,7 +97,7 @@ func main() {
 	signal.Notify(shutdownCh, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		sig := <-shutdownCh
-		utils.Log.Info("shutdown signal received", zap.String("signal", sig.String()))
+		logger.Log.Info("shutdown signal received", zap.String("signal", sig.String()))
 
 		cancel()
 
@@ -105,15 +105,15 @@ func main() {
 		defer cancelTimeout()
 
 		if err := server.Shutdown(ctxTimeout); err != nil {
-			utils.Log.Error("server shutdown failed", zap.Error(err))
+			logger.Log.Error("server shutdown failed", zap.Error(err))
 		}
 
-		utils.Log.Info("graceful shutdown completed")
+		logger.Log.Info("graceful shutdown completed")
 	}()
 
-	utils.Log.Info("load balancer listening", zap.String("port", cfg.Port))
+	logger.Log.Info("load balancer listening", zap.String("port", cfg.Port))
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		utils.Log.Fatal("http server error", zap.Error(err))
+		logger.Log.Fatal("http server error", zap.Error(err))
 	}
 
 }
