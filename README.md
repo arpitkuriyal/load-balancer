@@ -18,7 +18,7 @@
 
 ---
 
-## ⚙️ Configuration (`config.yaml`)
+## Configuration (`config.yaml`)
 
 ```yaml
 port: ":3332"
