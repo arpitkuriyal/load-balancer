@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"load-balancer/config"
 	"load-balancer/internal/backend"
 	"load-balancer/internal/healthcheck"
+	limiter "load-balancer/internal/limitter"
 	"load-balancer/internal/logger"
 	"load-balancer/internal/pool"
 	"load-balancer/internal/strategy"
@@ -38,6 +40,8 @@ func main() {
 		zap.String("strategy", cfg.Strategy),
 		zap.String("port", cfg.Port),
 	)
+
+	ipLimiter := limiter.NewIPRateLimiter(20, 10)
 
 	sp := &pool.ServerPool{}
 	for _, rawURL := range cfg.Backends {
@@ -74,6 +78,16 @@ func main() {
 	go healthcheck.Start(ctx, sp, 5*time.Second)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+
+		if !ipLimiter.Allow(ip) {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		b := lbStrategy.Next()
 		if b == nil {
 			http.Error(w, "no backend available", http.StatusServiceUnavailable)
@@ -89,6 +103,7 @@ func main() {
 
 		b.Serve(w, r)
 	})
+
 	server := &http.Server{
 		Addr: cfg.Port,
 	}
