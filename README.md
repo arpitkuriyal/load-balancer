@@ -5,15 +5,15 @@
 
 ## ✨ Features
 
-*  Reverse proxy–based HTTP load balancing
-*  Multiple load‑balancing strategies
-  * Round Robin
-  * Least Connections
-*  **Per‑IP rate limiting (Token Bucket algorithm)**
-*  Backend health checks
-*  Graceful shutdown with OS signals
-*  Structured logging (Zap)
-* Clean, modular Go project structure
+- Reverse proxy–based HTTP load balancing
+- Multiple load‑balancing strategies
+  - Round Robin
+  - Least Connections
+- Per‑IP rate limiting (Token Bucket algorithm)
+- Backend health checks
+- Graceful shutdown with OS signals
+- Structured logging (Zap)
+- Clean, modular Go project structure
 
 
 ---
