@@ -1,7 +1,7 @@
 # Load Balancer in Go
 
+A simple HTTP load balancer built in Go to understand how reverse proxies, load-balancing strategies, health checks, and rate limiting work in real systems.
 
----
 
 ## ✨ Features
 
