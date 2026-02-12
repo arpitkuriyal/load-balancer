@@ -12,7 +12,7 @@ import (
 
 	"load-balancer/config"
 	"load-balancer/internal/backend"
-	"load-balancer/internal/healthcheck"
+	"load-balancer/internal/healthCheck"
 	limiter "load-balancer/internal/limitter"
 	"load-balancer/internal/logger"
 	"load-balancer/internal/pool"
@@ -75,7 +75,7 @@ func main() {
 
 	logger.Log.Info("load balancing strategy initialized", zap.String("strategy", cfg.Strategy))
 
-	go healthcheck.Start(ctx, sp, 5*time.Second)
+	go healthCheck.Start(ctx, sp, 5*time.Second)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)

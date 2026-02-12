@@ -1,4 +1,4 @@
-package healthcheck
+package healthCheck
 
 import (
 	"context"
