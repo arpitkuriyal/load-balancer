@@ -3,7 +3,7 @@
 A simple HTTP load balancer built in Go to understand how reverse proxies, load-balancing strategies, health checks, and rate limiting work in real systems.
 
 
-## ✨ Features
+## Features
 
 - Reverse proxy–based HTTP load balancing
 - Multiple load‑balancing strategies
