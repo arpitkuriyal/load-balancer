@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	utils "load-balancer/internal/logger"
+	"load-balancer/internal/metrics"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -30,7 +31,9 @@ func (b *Backend) SetAlive(alive bool) {
 
 	b.IsAlive = alive
 
+	value := 0.0
 	if alive {
+		value = 1.0
 		utils.Log.Info(
 			"backend recovered",
 			zap.String("backend", b.Url.String()),
@@ -41,14 +44,17 @@ func (b *Backend) SetAlive(alive bool) {
 			zap.String("backend", b.Url.String()),
 		)
 	}
+	metrics.BackendUp.WithLabelValues(b.Url.String()).Set(value)
 }
 
 func (b *Backend) Serve(w http.ResponseWriter, r *http.Request) {
+	metrics.ActiveConnections.WithLabelValues(b.Url.String()).Inc()
 	b.mux.Lock()
 	b.activeConnections++
 	b.mux.Unlock()
 
 	defer func() {
+		metrics.ActiveConnections.WithLabelValues(b.Url.String()).Inc()
 		b.mux.Lock()
 		b.activeConnections--
 		b.mux.Unlock()

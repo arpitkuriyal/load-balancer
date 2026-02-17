@@ -15,16 +15,38 @@ import (
 	"load-balancer/internal/healthCheck"
 	limiter "load-balancer/internal/limitter"
 	"load-balancer/internal/logger"
+	"load-balancer/internal/metrics"
 	"load-balancer/internal/pool"
 	"load-balancer/internal/strategy"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
 
 func main() {
 	logger.InitLogger(os.Getenv("LOG_ENV"))
 	defer logger.Sync()
 
+	prometheus.MustRegister(
+		metrics.RequestsTotal,
+		metrics.RequestDuration,
+		metrics.BackendUp,
+		metrics.ActiveConnections,
+		metrics.RateLimitedTotal,
+	)
+
+	http.Handle("/metrics", promhttp.Handler())
 	logger.Log.Info("starting load balancer")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -78,30 +100,45 @@ func main() {
 	go healthCheck.Start(ctx, sp, 5*time.Second)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			ip = r.RemoteAddr
 		}
 
 		if !ipLimiter.Allow(ip) {
+			metrics.RateLimitedTotal.Inc()
 			http.Error(w, "Too many requests", http.StatusTooManyRequests)
 			return
 		}
 
 		b := lbStrategy.Next()
 		if b == nil {
+			metrics.RequestsTotal.WithLabelValues(
+				"none",
+				r.Method,
+				"503",
+			).Inc()
+
 			http.Error(w, "no backend available", http.StatusServiceUnavailable)
 			return
 		}
 
-		logger.Log.Debug(
-			"request forwarded",
-			zap.String("backend", b.Url.String()),
-			zap.String("path", r.URL.Path),
-			zap.String("method", r.Method),
-		)
+		rec := &statusRecorder{ResponseWriter: w, status: 200}
+		b.Serve(rec, r)
 
-		b.Serve(w, r)
+		duration := time.Since(start).Seconds()
+
+		metrics.RequestsTotal.WithLabelValues(
+			b.Url.String(),
+			r.Method,
+			http.StatusText(rec.status),
+		).Inc()
+
+		metrics.RequestDuration.WithLabelValues(
+			b.Url.String(),
+		).Observe(duration)
 	})
 
 	server := &http.Server{
