@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// can add this to a separate helper file later
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
@@ -33,6 +34,8 @@ func (r *statusRecorder) WriteHeader(code int) {
 	r.status = code
 	r.ResponseWriter.WriteHeader(code)
 }
+
+// till here
 
 func main() {
 	logger.InitLogger(os.Getenv("LOG_ENV"))
