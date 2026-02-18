@@ -54,7 +54,7 @@ func (b *Backend) Serve(w http.ResponseWriter, r *http.Request) {
 	b.mux.Unlock()
 
 	defer func() {
-		metrics.ActiveConnections.WithLabelValues(b.Url.String()).Inc()
+		metrics.ActiveConnections.WithLabelValues(b.Url.String()).Dec()
 		b.mux.Lock()
 		b.activeConnections--
 		b.mux.Unlock()
