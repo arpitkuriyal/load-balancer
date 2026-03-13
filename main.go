@@ -13,7 +13,7 @@ import (
 	"load-balancer/config"
 	"load-balancer/internal/backend"
 	"load-balancer/internal/healthCheck"
-	limiter "load-balancer/internal/limitter"
+	"load-balancer/internal/limiter"
 	"load-balancer/internal/logger"
 	"load-balancer/internal/metrics"
 	"load-balancer/internal/pool"

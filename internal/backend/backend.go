@@ -2,7 +2,7 @@ package backend
 
 import (
 	"context"
-	utils "load-balancer/internal/logger"
+	"load-balancer/internal/logger"
 	"load-balancer/internal/metrics"
 	"net/http"
 	"net/http/httputil"
@@ -34,12 +34,12 @@ func (b *Backend) SetAlive(alive bool) {
 	value := 0.0
 	if alive {
 		value = 1.0
-		utils.Log.Info(
+		logger.Log.Info(
 			"backend recovered",
 			zap.String("backend", b.Url.String()),
 		)
 	} else {
-		utils.Log.Warn(
+		logger.Log.Warn(
 			"backend marked down",
 			zap.String("backend", b.Url.String()),
 		)
@@ -84,7 +84,7 @@ func (b *Backend) HealthCheck(ctx context.Context) {
 	)
 
 	if err != nil {
-		utils.Log.Debug(
+		logger.Log.Debug(
 			"health check request creation failed",
 			zap.String("backend", b.Url.String()),
 			zap.Error(err),
@@ -95,7 +95,7 @@ func (b *Backend) HealthCheck(ctx context.Context) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		utils.Log.Warn(
+		logger.Log.Warn(
 			"health check failed",
 			zap.String("backend", b.Url.String()),
 			zap.Error(err),
