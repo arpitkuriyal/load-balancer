@@ -1,6 +1,6 @@
 # Load Balancer in Go
 
-A HTTP load balancer built in Go to understand real backend system tradeoffs such as reverse proxying, load-balancing strategies, health checks, per-IP rate limiting, graceful shutdown, and Prometheus-based observability.
+An HTTP load balancer built in Go to understand real backend system tradeoffs such as reverse proxying, load-balancing strategies, health checks, per-IP rate limiting, graceful shutdown, and Prometheus-based observability.
 
 ---
 
